@@ -15,26 +15,28 @@ export default class NewPlaylistContainer extends React.Component {
     this.inputHandler = this.inputHandler.bind(this);
     this.submitHandler = this.submitHandler.bind(this);
   }
+
   inputHandler(event) {
     const value = event.target.value
     if (value.length > 16 || value === '') {
       this.setState({
         buttonDisabled: true,
+        alertText: 'Please enter a valid playlist title :)',
+        alertClassName: 'alert alert-warning',
         userInput: value,
         inputValue: value,
-        alertText: 'Please enter a valid playlist title :)',
-        alertClassName: 'alert alert-warning'
       })
     } else {
       this.setState({
         buttonDisabled: false,
+        alertText: '',
+        alertClassName: '',
         userInput: value,
         inputValue: value,
-        alertText: '',
-        alertClassName: ''
       })
     }
   }
+
   submitHandler(event) {
     event.preventDefault();
     this.props.postPlaylist(this.state.userInput);
@@ -42,16 +44,11 @@ export default class NewPlaylistContainer extends React.Component {
       inputValue: ''
     })
   }
-  // postPlaylist() {
-  //   axios.post('/api/playlists/', {name: this.state.userInput})
-  //     .then(res => res.data)
-  //     .then(result => {
-  //       console.log(result) // response json from the server!
-  //     });
-  // }
+
   render() {
     return (
       <div>
+
         <NewPlaylist
           submitHandler={this.submitHandler}
           inputHandler={this.inputHandler}

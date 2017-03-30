@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import { hashHistory } from 'react-router'
 
 import initialState from '../initialState';
 import AUDIO from '../audio';
@@ -24,6 +25,7 @@ export default class AppContainer extends Component {
     this.selectAlbum = this.selectAlbum.bind(this);
     this.selectArtist = this.selectArtist.bind(this);
     this.postPlaylist = this.postPlaylist.bind(this);
+    this.selectPlaylist = this.selectPlaylist.bind(this);
   }
 
   componentDidMount() {
@@ -131,11 +133,28 @@ export default class AppContainer extends Component {
     axios.post('/api/playlists/', { name: playlistName })
       .then(res => res.data)
       .then(result => {
-        console.log(result) // response json from the server!
+        //console.log(result) // response json from the server!
         this.setState({
           playlists: [...this.state.playlists, result]
         })
+        hashHistory.push(`/playlists/${result.id}`)
       });
+  }
+
+  selectPlaylist(playlistId) {
+    Promise
+      .all([
+        axios.get(`/api/playlists/${playlistId}`),
+        axios.get(`/api/playlists/${playlistId}/songs`)
+      ])
+      .then(res => res.map(r => r.data))
+      .then(data => this.onLoadPlaylist(...data));
+  }
+
+  onLoadPlaylist(playlist, songs) {
+    playlist.songs = songs.map(convertSong)
+
+    this.setState({ selectedPlaylist: playlist })
   }
 
   render() {
@@ -145,7 +164,8 @@ export default class AppContainer extends Component {
       toggle: this.toggle,
       selectAlbum: this.selectAlbum,
       selectArtist: this.selectArtist,
-      postPlaylist: this.postPlaylist
+      postPlaylist: this.postPlaylist,
+      selectPlaylist: this.selectPlaylist
     });
 
     return (
