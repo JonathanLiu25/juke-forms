@@ -13,7 +13,7 @@ import { convertAlbum, convertAlbums, convertSong, skip } from '../utils';
 
 export default class AppContainer extends Component {
 
-  constructor (props) {
+  constructor(props) {
     super(props);
     this.state = initialState;
 
@@ -23,14 +23,16 @@ export default class AppContainer extends Component {
     this.prev = this.prev.bind(this);
     this.selectAlbum = this.selectAlbum.bind(this);
     this.selectArtist = this.selectArtist.bind(this);
+    this.postPlaylist = this.postPlaylist.bind(this);
   }
 
-  componentDidMount () {
+  componentDidMount() {
 
     Promise
       .all([
         axios.get('/api/albums/'),
-        axios.get('/api/artists/')
+        axios.get('/api/artists/'),
+        axios.get('/api/playlists')
       ])
       .then(res => res.map(r => r.data))
       .then(data => this.onLoad(...data));
@@ -41,24 +43,25 @@ export default class AppContainer extends Component {
       this.setProgress(AUDIO.currentTime / AUDIO.duration));
   }
 
-  onLoad (albums, artists) {
+  onLoad(albums, artists, playlists) {
     this.setState({
       albums: convertAlbums(albums),
-      artists: artists
+      artists: artists,
+      playlists: playlists
     });
   }
 
-  play () {
+  play() {
     AUDIO.play();
     this.setState({ isPlaying: true });
   }
 
-  pause () {
+  pause() {
     AUDIO.pause();
     this.setState({ isPlaying: false });
   }
 
-  load (currentSong, currentSongList) {
+  load(currentSong, currentSongList) {
     AUDIO.src = currentSong.audioUrl;
     AUDIO.load();
     this.setState({
@@ -67,36 +70,36 @@ export default class AppContainer extends Component {
     });
   }
 
-  startSong (song, list) {
+  startSong(song, list) {
     this.pause();
     this.load(song, list);
     this.play();
   }
 
-  toggleOne (selectedSong, selectedSongList) {
+  toggleOne(selectedSong, selectedSongList) {
     if (selectedSong.id !== this.state.currentSong.id)
       this.startSong(selectedSong, selectedSongList);
     else this.toggle();
   }
 
-  toggle () {
+  toggle() {
     if (this.state.isPlaying) this.pause();
     else this.play();
   }
 
-  next () {
+  next() {
     this.startSong(...skip(1, this.state));
   }
 
-  prev () {
+  prev() {
     this.startSong(...skip(-1, this.state));
   }
 
-  setProgress (progress) {
+  setProgress(progress) {
     this.setState({ progress: progress });
   }
 
-  selectAlbum (albumId) {
+  selectAlbum(albumId) {
     axios.get(`/api/albums/${albumId}`)
       .then(res => res.data)
       .then(album => this.setState({
@@ -104,7 +107,7 @@ export default class AppContainer extends Component {
       }));
   }
 
-  selectArtist (artistId) {
+  selectArtist(artistId) {
     Promise
       .all([
         axios.get(`/api/artists/${artistId}`),
@@ -115,7 +118,7 @@ export default class AppContainer extends Component {
       .then(data => this.onLoadArtist(...data));
   }
 
-  onLoadArtist (artist, albums, songs) {
+  onLoadArtist(artist, albums, songs) {
     songs = songs.map(convertSong);
     albums = convertAlbums(albums);
     artist.albums = albums;
@@ -124,24 +127,36 @@ export default class AppContainer extends Component {
     this.setState({ selectedArtist: artist });
   }
 
-  render () {
+  postPlaylist(playlistName) {
+    axios.post('/api/playlists/', { name: playlistName })
+      .then(res => res.data)
+      .then(result => {
+        console.log(result) // response json from the server!
+        this.setState({
+          playlists: [...this.state.playlists, result]
+        })
+      });
+  }
+
+  render() {
 
     const props = Object.assign({}, this.state, {
       toggleOne: this.toggleOne,
       toggle: this.toggle,
       selectAlbum: this.selectAlbum,
-      selectArtist: this.selectArtist
+      selectArtist: this.selectArtist,
+      postPlaylist: this.postPlaylist
     });
 
     return (
       <div id="main" className="container-fluid">
         <div className="col-xs-2">
-          <Sidebar />
+          <Sidebar playlists={this.state.playlists} />
         </div>
         <div className="col-xs-10">
-        {
-          this.props.children && React.cloneElement(this.props.children, props)
-        }
+          {
+            this.props.children && React.cloneElement(this.props.children, props)
+          }
         </div>
         <Player
           currentSong={this.state.currentSong}

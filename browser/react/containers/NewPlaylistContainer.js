@@ -14,7 +14,6 @@ export default class NewPlaylistContainer extends React.Component {
     }
     this.inputHandler = this.inputHandler.bind(this);
     this.submitHandler = this.submitHandler.bind(this);
-    this.postPlaylist = this.postPlaylist.bind(this);
   }
   inputHandler(event) {
     const value = event.target.value
@@ -38,18 +37,18 @@ export default class NewPlaylistContainer extends React.Component {
   }
   submitHandler(event) {
     event.preventDefault();
-    this.postPlaylist();
+    this.props.postPlaylist(this.state.userInput);
     this.setState({
       inputValue: ''
     })
   }
-  postPlaylist() {
-    axios.post('/api/playlists/', {name: this.state.userInput})
-      .then(res => res.data)
-      .then(result => {
-        console.log(result) // response json from the server!
-      });
-  }
+  // postPlaylist() {
+  //   axios.post('/api/playlists/', {name: this.state.userInput})
+  //     .then(res => res.data)
+  //     .then(result => {
+  //       console.log(result) // response json from the server!
+  //     });
+  // }
   render() {
     return (
       <div>
